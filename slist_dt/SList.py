@@ -84,10 +84,12 @@ class SList:
 
     def insert_at(self, index: int, element: Union[int, str]) -> Optional[SNode]:
         if not isinstance(index, int):
-            raise TypeError(f"Supported type is 'int' but got '{type(index)}'")
+            raise TypeError(
+                f"Supported data type for 'index' is 'int' but got '{type(index)}'"
+            )
 
         elif index < 0:
-            raise ValueError(f"Index cannot be smaller than '0'")
+            raise ValueError("Index cannot be smaller than '0'")
 
         elif index == 0:
             self.add_first(element)
@@ -110,10 +112,12 @@ class SList:
 
     def remove_at(self, index: int) -> Optional[Union[int, str]]:
         if not isinstance(index, int):
-            raise TypeError(f"Supported type is 'int' but got '{type(index)}'")
+            raise TypeError(
+                f"Supported data type for 'index' is 'int' but got '{type(index)}'"
+            )
 
         elif index < 0 or index > self.size:
-            raise ValueError(f"Index out of range")
+            raise ValueError('Index out of range')
 
         count = 0
         node = self.head
@@ -129,10 +133,12 @@ class SList:
 
     def get_at(self, index: int) -> Optional[Union[int, str]]:
         if not isinstance(index, int):
-            raise TypeError(f"Supported type is 'int' but got '{type(index)}'")
+            raise TypeError(
+                f"Supported data type for 'index' is 'int' but got '{type(index)}'"
+            )
 
         elif index < 0 or index >= self.size:
-            raise ValueError(f"Index out of range")
+            raise ValueError('Index out of range')
 
         # Iterate over SList
         count = 0
