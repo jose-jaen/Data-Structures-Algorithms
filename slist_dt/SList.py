@@ -12,7 +12,7 @@ class SList:
     def isempty(self) -> bool:
         return self.size == 0
 
-    def __error__(self, op: str) -> NoReturn:
+    def _error(self, op: str) -> NoReturn:
         """Throw an error if the Singly Linked List is empty.
 
         Args:
@@ -20,6 +20,16 @@ class SList:
         """
         if self.isempty():
             raise ValueError(f"The Singly Linked List is empty, cannot apply '{op}'")
+
+    def _check_index(self, index: int) -> NoReturn:
+        """Throw an error if index is invalid."""
+        if not isinstance(index, int):
+            raise TypeError(
+                f"Supported data type for 'index' is 'int' but got '{type(index)}'"
+            )
+
+        elif index < 0 or index >= self.size:
+            raise ValueError('Index out of range')
 
     def add_first(self, element: Union[int, str]) -> NoReturn:
         """Set a node as head at any moment."""
@@ -29,8 +39,8 @@ class SList:
         self.size += 1
 
     def remove_first(self) -> Optional[Union[int, str]]:
-        if self.isempty():
-            return self.__error__(op='remove_first')
+        # Do not proceed if SList is empty
+        self._error(op='remove_first')
 
         removed = self.head.element
         self.head = self.head.next_element
@@ -49,8 +59,8 @@ class SList:
             self.size += 1
 
     def remove_last(self) -> Optional[Union[int, str]]:
-        if self.isempty():
-            return self.__error__(op='remove_last')
+        # Do not proceed if SList is empty
+        self._error(op='remove_last')
 
         # Iterate over the Single Linked List
         node = self.head
@@ -83,18 +93,13 @@ class SList:
         return -1
 
     def insert_at(self, index: int, element: Union[int, str]) -> Optional[SNode]:
-        if not isinstance(index, int):
-            raise TypeError(
-                f"Supported data type for 'index' is 'int' but got '{type(index)}'"
-            )
+        # Check index validity
+        self._check_index(index)
 
-        elif index < 0:
-            raise ValueError("Index cannot be smaller than '0'")
-
-        elif index == 0:
+        if index == 0:
             self.add_first(element)
 
-        elif index >= self.size:
+        elif index == self.size:
             self.add_last(element)
 
         else:
@@ -111,13 +116,8 @@ class SList:
             return new_node
 
     def remove_at(self, index: int) -> Optional[Union[int, str]]:
-        if not isinstance(index, int):
-            raise TypeError(
-                f"Supported data type for 'index' is 'int' but got '{type(index)}'"
-            )
-
-        elif index < 0 or index > self.size:
-            raise ValueError('Index out of range')
+        # Check index validity
+        self._check_index(index)
 
         count = 0
         node = self.head
@@ -132,13 +132,8 @@ class SList:
         return removed
 
     def get_at(self, index: int) -> Optional[Union[int, str]]:
-        if not isinstance(index, int):
-            raise TypeError(
-                f"Supported data type for 'index' is 'int' but got '{type(index)}'"
-            )
-
-        elif index < 0 or index >= self.size:
-            raise ValueError('Index out of range')
+        # Check index validity
+        self._check_index(index)
 
         # Iterate over SList
         count = 0

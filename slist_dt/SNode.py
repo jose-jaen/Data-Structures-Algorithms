@@ -18,7 +18,9 @@ class SNode:
     @element.setter
     def element(self, el: Union[int, str]):
         if not isinstance(el, (int, str)):
-            raise TypeError(f"Supported types are 'int' and 'str' but got '{type(el)}'")
+            raise TypeError(
+                f"Supported data types are 'int' and 'str' but got '{type(el)}'"
+            )
 
         self._element = el
 
@@ -30,10 +32,10 @@ class SNode:
     def next_element(self, next_el: Optional['SNode']):
         if not isinstance(next_el, SNode) and next_el is not None:
             raise TypeError(
-                f"Supported types are 'SNode' and 'None' but got '{type(next_el)}'"
+                f"Supported data types are 'SNode' and 'None' but got '{type(next_el)}'"
             )
 
         self._next_element = next_el
 
     def __str__(self):
-        return f'{self._element} -> {self._next_element}'
+        return f'{self._element} --> {self._next_element}'

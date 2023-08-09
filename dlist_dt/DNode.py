@@ -20,7 +20,9 @@ class DNode:
     @previous.setter
     def previous(self, previous: Optional['DNode']):
         if not isinstance(previous, DNode) and previous is not None:
-            raise TypeError(f"Supported data type is 'DNode' but got '{type(previous)}'")
+            raise TypeError(
+                f"Supported data types are 'DNode' and 'None' but got '{type(previous)}'"
+            )
         self._previous = previous
 
     @property
@@ -40,10 +42,10 @@ class DNode:
         return self._next_node
 
     @next_node.setter
-    def next_node(self, next_node: 'DNode'):
+    def next_node(self, next_node: Optional['DNode']):
         if not isinstance(next_node, DNode) and next_node is not None:
             raise TypeError(
-                f"Supported data type is 'DNode' but got '{type(next_node)}'"
+                f"Supported data types are 'DNode' and 'None' but got '{type(next_node)}'"
             )
         self._next_node = next_node
 
