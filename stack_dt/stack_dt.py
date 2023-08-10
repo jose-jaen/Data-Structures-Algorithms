@@ -34,6 +34,6 @@ class Stack:
 
     def size(self) -> int:
         return len(self.items)
-    
+
     def __str__(self) -> str:
         return str(self.items)

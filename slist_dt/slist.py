@@ -1,10 +1,10 @@
 from typing import NoReturn
 
-from SNode import *
+from snode import *
 
 
 class SList:
-    """Implementation of Single List Data Structure."""
+    """Implementation of Single Linked List Data Structure."""
     def __init__(self):
         self.size = 0
         self.head = None
@@ -33,8 +33,7 @@ class SList:
 
     def add_first(self, element: Union[int, str]) -> NoReturn:
         """Set a node as head at any moment."""
-        node = SNode(el=element)
-        node.next = self.head
+        node = SNode(el=element, next_el=self.head)
         self.head = node
         self.size += 1
 
@@ -43,7 +42,7 @@ class SList:
         self._error(op='remove_first')
 
         removed = self.head.element
-        self.head = self.head.next_element
+        self.head = self.head.next_node
         self.size -= 1
         return removed
 
@@ -53,9 +52,9 @@ class SList:
         else:
             new_node = SNode(element)
             node = self.head
-            while node.next_element:
-                node = node.next_element
-            node.next_element = new_node
+            while node.next_node:
+                node = node.next_node
+            node.next_node = new_node
             self.size += 1
 
     def remove_last(self) -> Optional[Union[int, str]]:
@@ -65,9 +64,9 @@ class SList:
         # Iterate over the Single Linked List
         node = self.head
         previous = None
-        while node.next_element:
+        while node.next_node:
             previous = node
-            node = node.next_element
+            node = node.next_node
 
         # One-element list
         if previous is None:
@@ -75,18 +74,21 @@ class SList:
 
         # Rest of cases
         result = node.element
-        previous.next_element = None
+        previous.next_node = None
         self.size -= 1
         return result
 
     def contains(self, element: Union[int, str]) -> int:
         """Retrieve the index of the first matching element."""
+        if self.isempty():
+            self._error(op='contains')
+
         index = 0
         node = self.head
         while index < self.size and node is not None:
             if node.element == element:
                 return index
-            node = node.next_element
+            node = node.next_node
             index += 1
 
         # Not found
@@ -108,10 +110,10 @@ class SList:
             count = 0
             while count < index:
                 previous = node
-                node = node.next_element
+                node = node.next_node
                 count += 1
-            new_node = SNode(element, SNode(node.element, node.next_element))
-            previous.next_element = new_node
+            new_node = SNode(element, SNode(node.element, node.next_node))
+            previous.next_node = new_node
             self.size += 1
             return new_node
 
@@ -119,17 +121,24 @@ class SList:
         # Check index validity
         self._check_index(index)
 
-        count = 0
-        node = self.head
-        previous = None
-        while count < index:
-            previous = node
-            node = node.next_element
-            count += 1
-        previous.next_element = node.next_element
-        removed = node.element
-        self.size -= 1
-        return removed
+        if index == 0:
+            self.remove_first()
+
+        elif index == self.size - 1:
+            self.remove_last()
+
+        else:
+            count = 0
+            node = self.head
+            previous = None
+            while count < index:
+                previous = node
+                node = node.next_node
+                count += 1
+            previous.next_node = node.next_node
+            removed = node.element
+            self.size -= 1
+            return removed
 
     def get_at(self, index: int) -> Optional[Union[int, str]]:
         # Check index validity
@@ -138,8 +147,8 @@ class SList:
         # Iterate over SList
         count = 0
         node = self.head
-        while count < index:
-            node = node.next_element
+        while count != index:
+            node = node.next_node
             count += 1
         return node.element
 

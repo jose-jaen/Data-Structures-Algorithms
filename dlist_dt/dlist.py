@@ -1,6 +1,6 @@
 from typing import NoReturn
 
-from dlist_dt.DNode import *
+from dlist_dt.dnode import *
 
 
 class DList:
