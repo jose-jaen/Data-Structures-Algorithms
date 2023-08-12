@@ -1,6 +1,6 @@
 from typing import Union, NoReturn
 
-from slist import SList
+from slist import SList, SNode
 
 
 class SList2(SList):
@@ -138,6 +138,34 @@ class SList2(SList):
                 else:
                     current = current.next_node
 
+    def remove_duplicates(self) -> NoReturn:
+        # Check if list is sorted
+        self.remove_duplicates_sorted()
+
+        if self.size > 1:
+            prev = self.head
+            node = prev.next_node
+
+            # List for caching values
+            cache = SList2()
+            cache.add_first(prev.element)
+            while node.next_node:
+                if cache.contains(node.element) != -1:
+                    node = node.next_node
+                    self.size -= 1
+                else:
+                    cache.add_first(node.element)
+                    prev.next_node = node
+                    prev = node
+                    node = node.next_node
+
+            # Check last value
+            if cache.contains(node.element) != -1:
+                self.size -= 1
+                prev.next_node = None
+            else:
+                prev.next_node = node
+
     def move_last(self) -> NoReturn:
         """Move the last element to the beginning without using any method."""
         if self.isempty():
@@ -154,3 +182,19 @@ class SList2(SList):
         node.next_node = self.head
         self.head = node
         prev.next_node = None
+
+    def intersection(self, l2: 'SList2') -> 'SList2':
+        """Return common elements of two sorted lists."""
+        if self.issorted() and l2.issorted():
+            self.remove_duplicates()
+            l2.remove_duplicates()
+
+            # Check common elements
+            res = SList2()
+            for i in range(self.size):
+                el1 = self.get_at(i)
+                if l2.contains(el1) != -1:
+                    res.add_last(el1)
+            return res
+        else:
+            raise ValueError('At least one of the given lists is not sorted')
