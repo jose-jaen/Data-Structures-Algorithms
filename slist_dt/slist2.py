@@ -185,7 +185,11 @@ class SList2(SList):
 
     def intersection(self, l2: 'SList2') -> 'SList2':
         """Return common elements of two sorted lists."""
-        if self.issorted() and l2.issorted():
+        if not self.issorted():
+            raise ValueError('The first Singly Linked List is not sorted')
+        elif not l2.issorted():
+            raise ValueError('The second Singly Linked List is not sorted')
+        else:
             self.remove_duplicates()
             l2.remove_duplicates()
 
@@ -196,5 +200,42 @@ class SList2(SList):
                 if l2.contains(el1) != -1:
                     res.add_last(el1)
             return res
-        else:
-            raise ValueError('At least one of the given lists is not sorted')
+
+    def segregate_odd_even(self) -> SNode:
+        """Display even elements before odd elements."""
+        self.remove_duplicates()
+
+        # Initialize variables
+        odd = None
+        even = None
+        odd_tail = None
+        even_tail = None
+        node = self.head
+
+        # Iterate over lists
+        while node:
+            new_node = SNode(node.element)
+
+            if node.element % 2 == 0:
+                if even is None:
+                    even = new_node
+                    even_tail = even
+                else:
+                    even_tail.next_node = new_node
+                    even_tail = even_tail.next_node
+            else:
+                if odd is None:
+                    odd = new_node
+                    odd_tail = odd
+                else:
+                    odd_tail.next_node = new_node
+                    odd_tail = odd_tail.next_node
+
+            node = node.next_node
+
+        # Join both lists (if even numbers)
+        if even_tail:
+            even_tail.next_node = odd
+
+        # Return odd list if not even
+        return even if even else odd
