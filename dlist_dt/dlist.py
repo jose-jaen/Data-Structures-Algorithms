@@ -209,6 +209,13 @@ class DList:
         """Graphical representation of DList."""
         res = 'None'
         node = self.head
+
+        # Edge cases
+        if not self.size:
+            return res
+        elif self.size == 1:
+            return f'{res} <-- {node.element} --> {res}'
+
         while node.next_node:
             if node == self.head:
                 res += f' <-- {node.element}'
