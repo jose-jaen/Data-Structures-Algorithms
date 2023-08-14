@@ -98,9 +98,8 @@ class SList2(SList):
         node = self.head
         while index != self.size:
             if isinstance(node.element, str):
-                size = len(node.element)
-                reverse = [node.element[size - 1 - j] for j in range(size)]
-                if ''.join(reverse) == node.element:
+                reverse = node.element[::-1]
+                if reverse == node.element:
                     return True
             index += 1
             node = node.next_node
@@ -168,8 +167,7 @@ class SList2(SList):
 
     def move_last(self) -> NoReturn:
         """Move the last element to the beginning without using any method."""
-        if self.isempty():
-            self._error(op='move_last')
+        self._error(op='move_last')
 
         # Iterate over SList
         index = 0
@@ -190,15 +188,13 @@ class SList2(SList):
         elif not l2.issorted():
             raise ValueError('The second Singly Linked List is not sorted')
         else:
-            self.remove_duplicates()
-            l2.remove_duplicates()
-
             # Check common elements
             res = SList2()
             for i in range(self.size):
                 el1 = self.get_at(i)
                 if l2.contains(el1) != -1:
                     res.add_last(el1)
+            res.remove_duplicates()
             return res
 
     def segregate_odd_even(self) -> SNode:
