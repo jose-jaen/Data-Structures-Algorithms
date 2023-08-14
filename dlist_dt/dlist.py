@@ -17,7 +17,7 @@ class DList:
         """Throw an error if the Doubly Linked List is empty.
 
         Args:
-            - op (str): Operation to carry out on the Singly Linked List
+            - op (str): Operation to carry out on the Doubly Linked List
         """
         if self.isempty():
             raise ValueError(f"The Doubly Linked List is empty, cannot apply '{op}'")

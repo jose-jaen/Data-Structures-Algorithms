@@ -142,3 +142,123 @@ class DList2(DList):
                 prev = prev.previous
                 node = node.previous
         return True
+
+    def remove_duplicates_sorted(self) -> NoReturn:
+        """Eliminate duplicates from a sorted list."""
+        self._error(op='remove_duplicates_sorted')
+
+        if not self.issorted():
+            raise ValueError('Doubly Linked List is not sorted')
+
+        if self.size > 1:
+            node = self.tail
+            prev = node.previous
+            while prev:
+                if prev.element == node.element and node == self.tail:
+                    prev.next_node = node.next_node
+                    self.tail = prev
+                    self.size -= 1
+                elif prev.element == node.element:
+                    prev.next_node = node.next_node
+                    self.size -= 1
+                node = node.previous
+                prev = prev.previous
+
+    def remove_duplicates(self) -> NoReturn:
+        self._error(op='remove_duplicates')
+
+        try:
+            # Check if the list is sorted
+            self.remove_duplicates_sorted()
+        except ValueError as e:
+            # Implement a new logic if unsorted
+            if str(e) == 'Doubly Linked List is not sorted':
+                if self.size > 1:
+                    cache = DList2()
+                    prev = self.head
+                    node = prev.next_node
+                    while node:
+                        # Get distinct elements
+                        if cache.isempty():
+                            cache.add_first(prev.element)
+
+                        elif not cache.contains(prev.element):
+                            cache.add_last(prev.element)
+
+                        else:
+                            self.size -= 1
+                            prev.previous.next_node = node
+                            node.previous = prev.previous
+                        prev = prev.next_node
+                        node = node.next_node
+
+                    # Check last value
+                    if cache.contains(prev.element):
+                        prev.previous.next_node = prev.next_node
+                        self.tail = prev.previous
+                        self.size -= 1
+
+    def move_last(self) -> NoReturn:
+        """Move the last element to the beginning without using any method."""
+        self._error(op='move_last')
+
+        if self.size > 1:
+            last = self.tail
+            new_tail = last.previous
+            last.next_node = self.head
+            self.head.previous = last
+            self.head = last
+            new_tail.next_node = None
+            self.tail = new_tail
+
+    def intersection(self, l2: 'DList2') -> Optional['DList2']:
+        """Return common elements of two sorted lists."""
+        if not self.issorted():
+            raise ValueError('The first Doubly Linked List is not sorted')
+        elif not l2.issorted():
+            raise ValueError('The second Doubly Linked List is not sorted')
+
+        # Remove duplicates
+        res = DList2()
+        self.remove_duplicates_sorted()
+        l2.remove_duplicates()
+
+        # Start with the list with the lowest value
+        short_list = self if self.size < l2.size else l2
+        long_list = self if self.size >= l2.size else l2
+        length = self.size if self.size < l2.size else l2.size
+
+        # Retrieve common elements
+        index = 0
+        while index < length:
+            element = short_list.get_at(index)
+            if long_list.contains(element):
+                res.add_last(element)
+            index += 1
+        return res
+
+    def segregate_odd_even(self) -> 'DList2':
+        """Display even elements before odd elements."""
+        self._error(op='segregate_odd_even')
+
+        # Even and odd lists
+        node = self.head
+        odd_list = DList2()
+        even_list = DList2()
+        while node:
+            if node.element % 2 == 0:
+                even_list.add_last(node.element)
+            else:
+                odd_list.add_last(node.element)
+            node = node.next_node
+
+        if even_list.size != 0 and odd_list.size != 0:
+            even_list.tail.next_node = odd_list.head
+            even_list.tail = odd_list.tail
+            even_list.remove_duplicates()
+            return even_list
+        elif odd_list.size == 0:
+            even_list.remove_duplicates()
+            return even_list
+        else:
+            return odd_list.remove_duplicates()
