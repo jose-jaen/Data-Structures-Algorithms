@@ -80,7 +80,6 @@ class DList2(DList):
 
         # Check if size is even
         if self.size % 2 == 0:
-            print((self.size // 2) + 1)
             return self.get_at(((self.size - 1) // 2) + 1)
         else:
             return self.get_at((self.size - 1) // 2)
@@ -99,7 +98,7 @@ class DList2(DList):
                 node = node.next_node
         return counter
 
-    def ispalindrome(self) -> bool:
+    def ispalindrome(self) -> Optional[bool]:
         """Check if there are palindrome words."""
         self._error(op='ispalindrome')
 
@@ -170,9 +169,11 @@ class DList2(DList):
         try:
             # Check if the list is sorted
             self.remove_duplicates_sorted()
+
         except ValueError as e:
-            # Implement a new logic if unsorted
             if str(e) == 'Doubly Linked List is not sorted':
+
+                # Implement a new logic if unsorted
                 if self.size > 1:
                     cache = DList2()
                     prev = self.head
@@ -261,4 +262,5 @@ class DList2(DList):
             even_list.remove_duplicates()
             return even_list
         else:
-            return odd_list.remove_duplicates()
+            odd_list.remove_duplicates()
+            return odd_list

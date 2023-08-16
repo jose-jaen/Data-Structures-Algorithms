@@ -6,9 +6,9 @@ from dlist_dt.dnode import *
 class DList:
     """Implementation of Doubly Linked List Data Structure."""
     def __init__(self):
-        self.size = 0
-        self.head = None
-        self.tail = None
+        self.size: int = 0
+        self.head: Optional[DNode] = None
+        self.tail: Optional[DNode] = None
 
     def isempty(self) -> bool:
         return self.size == 0
@@ -149,7 +149,6 @@ class DList:
 
     def remove_at(self, index: int) -> Optional[Union[int, str]]:
         """Remove an element from a certain position and return it."""
-        # Do not proceed if DList is empty or index is invalid
         self._error(op='remove_at')
         self._check_index(index)
 
