@@ -1,4 +1,4 @@
-from typing import Union, NoReturn
+from typing import Union, NoReturn, Optional
 
 from slist import SList, SNode
 
@@ -53,13 +53,13 @@ class SList2(SList):
             prev.next_node = None
             self.size -= 1
 
-    def get_at_rev(self, index: int) -> Union[int, str]:
+    def get_at_rev(self, index: int) -> Optional[Union[int, str]]:
         """Retrieve the specified element with reversed positioning."""
         self._error(op='get_at_rev')
         self._check_index(index)
         return self.get_at((self.size - 1) - index)
 
-    def get_middle(self) -> Union[int, str]:
+    def get_middle(self) -> Optional[Union[int, str]]:
         """Return the middle element."""
         self._error(op='get_middle')
 
@@ -76,7 +76,7 @@ class SList2(SList):
             count += 1
         return node.element
 
-    def count(self, el: Union[int, str]) -> int:
+    def count(self, el: Union[int, str]) -> Optional[int]:
         """Return total occurrences of an element."""
         if self.contains(el) == -1:
             return 0
@@ -92,8 +92,9 @@ class SList2(SList):
             node = node.next_node
         return total
 
-    def ispalindrome(self) -> bool:
+    def ispalindrome(self) -> Optional[bool]:
         """Check if there are palindrome words."""
+        self._error(op='ispalindrome')
         index = 0
         node = self.head
         while index != self.size:
@@ -105,8 +106,9 @@ class SList2(SList):
             node = node.next_node
         return False
 
-    def issorted(self) -> bool:
+    def issorted(self) -> Optional[bool]:
         """Check if the list follows ascending order."""
+        self._error(op='issorted')
         index = 0
         node = self.head
         while node.next_node:
@@ -181,7 +183,7 @@ class SList2(SList):
         self.head = node
         prev.next_node = None
 
-    def intersection(self, l2: 'SList2') -> 'SList2':
+    def intersection(self, l2: 'SList2') -> Optional['SList2']:
         """Return common elements of two sorted lists."""
         if not self.issorted():
             raise ValueError('The first Singly Linked List is not sorted')
@@ -197,7 +199,7 @@ class SList2(SList):
             res.remove_duplicates()
             return res
 
-    def segregate_odd_even(self) -> SNode:
+    def segregate_odd_even(self) -> Optional[SNode]:
         """Display even elements before odd elements."""
         self.remove_duplicates()
 

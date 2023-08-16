@@ -6,8 +6,8 @@ from snode import *
 class SList:
     """Implementation of Single Linked List Data Structure."""
     def __init__(self):
-        self.size = 0
-        self.head = None
+        self.size: int = 0
+        self.head: Optional[SNode] = None
 
     def isempty(self) -> bool:
         return self.size == 0
@@ -80,8 +80,7 @@ class SList:
 
     def contains(self, element: Union[int, str]) -> int:
         """Retrieve the index of the first matching element."""
-        if self.isempty():
-            self._error(op='contains')
+        self._error(op='contains')
 
         index = 0
         node = self.head
