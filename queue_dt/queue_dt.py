@@ -1,10 +1,10 @@
-from typing import Union, NoReturn
+from typing import Union, NoReturn, List, Optional
 
 
 class Queue:
     """Implementation of Queue Data Structure."""
     def __init__(self):
-        self.items = []
+        self.items: List[Optional[int, str]] = []
 
     def isempty(self) -> bool:
         return len(self.items) == 0
@@ -14,20 +14,18 @@ class Queue:
         if self.isempty():
             raise ValueError(f"The Queue is empty, cannot apply method '{operation}'")
 
-    def front(self) -> Union[int, str]:
-        if self.isempty():
-            return self.__error__(operation='front')
+    def front(self) -> Optional[Union[int, str]]:
+        self.__error__(operation='front')
         return self.items[0]
 
-    def enqueue(self, value: Union[int, str]) -> list:
+    def enqueue(self, value: Union[int, str]) -> List[int, str]:
         if not isinstance(value, (int, str)):
             raise TypeError(f"Supported types are 'int' and 'str' but got '{type(value)}'")
         self.items.append(value)
         return self.items
 
-    def dequeue(self) -> Union[int, str]:
-        if self.isempty():
-            return self.__error__(operation='dequeue')
+    def dequeue(self) -> Optional[Union[int, str]]:
+        self.__error__(operation='dequeue')
         return self.items.pop(0)
 
     def size(self) -> int:
