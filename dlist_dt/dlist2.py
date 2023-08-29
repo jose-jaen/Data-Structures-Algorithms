@@ -4,7 +4,7 @@ from dlist import DList
 
 
 class DList2(DList):
-    """Singly Linked List Data Structure with additional methods."""
+    """Doubly Linked List Data Structure with additional methods."""
     def __init__(self):
         super().__init__()
 
