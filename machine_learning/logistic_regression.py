@@ -24,13 +24,13 @@ class LogisticRegression:
         self.intercept_: Optional[float] = None
 
     @staticmethod
-    def _type_error(attribute_name: str, attribute: Any, data_type: Type) -> None:
+    def _type_error(att_name: str, att_value: Any, att_type: Type) -> None:
         """Raise TypeError if attribute has unexpected type."""
-        expected = data_type.__name__
-        mistyped = type(attribute).__name__
-        if not isinstance(attribute, data_type):
+        expected = att_type.__name__
+        mistyped = type(att_value).__name__
+        if not isinstance(att_value, att_type):
             raise TypeError(
-                f"'{attribute_name}' must be '{expected}' but got '{mistyped}'"
+                f"'{att_name}' must be '{expected}' but got '{mistyped}'"
             )
 
     @property
@@ -40,9 +40,9 @@ class LogisticRegression:
     @intercept.setter
     def intercept(self, intercept: bool) -> None:
         self._type_error(
-            attribute_name='intercept',
-            attribute=intercept,
-            data_type=bool
+            att_name='intercept',
+            att_value=intercept,
+            att_type=bool
         )
         self._intercept = intercept
 
@@ -53,9 +53,9 @@ class LogisticRegression:
     @learning_rate.setter
     def learning_rate(self, learning_rate: float):
         self._type_error(
-            attribute_name='learning_rate',
-            attribute=learning_rate,
-            data_type=float
+            att_name='learning_rate',
+            att_value=learning_rate,
+            att_type=float
         )
         if learning_rate <= 0:
             raise ValueError("'learning_rate' must be strictly positive")
@@ -68,9 +68,9 @@ class LogisticRegression:
     @max_iter.setter
     def max_iter(self, max_iter: int):
         self._type_error(
-            attribute_name='max_iter',
-            attribute=max_iter,
-            data_type=int
+            att_name='max_iter',
+            att_value=max_iter,
+            att_type=int
         )
         if max_iter <= 0:
             raise ValueError("'max_iter' must be strictly positive")
@@ -83,9 +83,9 @@ class LogisticRegression:
     @tol.setter
     def tol(self, tol: float):
         self._type_error(
-            attribute_name='tol',
-            attribute=tol,
-            data_type=float
+            att_name='tol',
+            att_value=tol,
+            att_type=float
         )
         if tol <= 0:
             raise ValueError("'tol' must be strictly positive")
@@ -98,9 +98,9 @@ class LogisticRegression:
     @l2_penalty.setter
     def l2_penalty(self, l2_penalty: float):
         self._type_error(
-            attribute_name='l2_penalty',
-            attribute=l2_penalty,
-            data_type=float
+            att_name='l2_penalty',
+            att_value=l2_penalty,
+            att_type=float
         )
         if l2_penalty < 0:
             raise ValueError("'l2_penalty' must be strictly positive")
@@ -113,9 +113,9 @@ class LogisticRegression:
     @solver.setter
     def solver(self, solver: str) -> None:
         self._type_error(
-            attribute_name='solver',
-            attribute=solver,
-            data_type=str
+            att_name='solver',
+            att_value=solver,
+            att_type=str
         )
         if solver not in ['gradient', 'newton']:
             raise ValueError(
@@ -132,7 +132,7 @@ class LogisticRegression:
     def gradient_ascent(
             self,
             regressors: Union[pd.DataFrame, np.ndarray],
-            target: Union[pd.DataFrame, np.ndarray]
+            target: Union[pd.Series, np.ndarray]
     ) -> np.ndarray:
         """Implement Gradient Ascent algorithm for learning.
 
@@ -147,7 +147,7 @@ class LogisticRegression:
         preds = self._sigmoid(z)
 
         # Account for regularization
-        penalty = -2 * self.l2_penalty*np.array(self.coef_)
+        penalty = -2 * self.l2_penalty * np.array(self.coef_)
         sample_size = regressors.shape[0]
 
         # Get stable gradient
@@ -158,7 +158,7 @@ class LogisticRegression:
     def newton_raphson(
             self,
             regressors: Union[pd.DataFrame, np.ndarray],
-            target: Union[pd.DataFrame, np.ndarray]
+            target: Union[pd.Series, np.ndarray]
     ) -> np.ndarray:
         """Implement Newton-Raphson algorithm for learning.
 
@@ -190,7 +190,7 @@ class LogisticRegression:
     def fit(
             self,
             regressors: Union[pd.DataFrame, np.ndarray],
-            target: Union[pd.DataFrame, np.ndarray],
+            target: Union[pd.Series, np.ndarray],
             standardize: bool = False
     ) -> Tuple[Optional[float], List[float]]:
         """Train a Logistic Regression model.
