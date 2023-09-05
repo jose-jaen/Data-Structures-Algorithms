@@ -19,7 +19,7 @@ class Node:
         """Raise TypeError if attribute has unexpected type."""
         if not isinstance(attribute, Node) and attribute is not None:
             raise TypeError(
-                f"'parent' must be either 'Node' or 'None' but got '{type(att_name).__name__}'"
+                f"'{att_name}' must be either 'Node' or 'None' but got '{type(att).__name__}'"
             )
 
     @property
