@@ -1,14 +1,17 @@
+import os
 from typing import Optional
 from collections import deque
+from time import sleep
 
 from graphviz import Digraph
 
 from node import Node
+from queue_dt.queue_dt import Queue
 
 
 class BinaryTree:
-    def __init__(self, root: Node):
-        self.root: Node = root
+    def __init__(self, root: Optional[Node]):
+        self.root = root
 
     def construct_tree(self, seq: str) -> Optional[Node]:
         """Connect nodes to create a Binary Tree.
@@ -26,24 +29,29 @@ class BinaryTree:
         seq_list = list(map(str, seq.split(' ')))
 
         # Create root
-        self.root = Node(data=int(seq_list[0]))
+        self.root = Node(data=seq_list[0])
         size = 0
 
-        # Store values
-        q = deque()
-        q.append(self.root, )
+        # Queue for storing current values
+        q = Queue()
+        q.enqueue(self.root)
         size += 1
+
+        # Start traversal
         i = 1
         while size > 0 and i < len(seq_list):
-            current_node = q[0]
-            q.popleft()
+            current_node = q.dequeue()
             size -= 1
-            current_value = seq_list[i]
 
             # Add new value if not null in left node
-            if current_value != 'N':
-                current_node.left = Node(data=int(current_value), parent=current_node)
-                q.append(current_node.left)
+            if seq_list[i] != 'N':
+                try:
+                    eval(seq_list[i])
+                    current_value = int(seq_list[i])
+                except NameError:
+                    current_value = seq_list[i]
+                current_node.left = Node(data=current_value, parent=current_node)
+                q.enqueue(current_node.left)
                 size += 1
 
             i += 1
@@ -51,17 +59,21 @@ class BinaryTree:
                 break
 
             # Check right node
-            current_value = seq_list[i]
-            if current_value != 'N':
-                current_node.right = Node(data=int(current_value), parent=current_node)
-                q.append(current_node.right)
+            if seq_list[i] != 'N':
+                try:
+                    eval(seq_list[i])
+                    current_value = int(seq_list[i])
+                except NameError:
+                    current_value = seq_list[i]
+                current_node.right = Node(data=current_value, parent=current_node)
+                q.enqueue(current_node.right)
                 size += 1
 
             i += 1
         return self.root
 
     def height(self, node: Node) -> int:
-        """Get the zero-based height of a tree.
+        """Get the zero-based height of a (sub)tree.
 
         Args:
             node (Node): Root node
@@ -74,7 +86,7 @@ class BinaryTree:
         return 1 + max(self.height(node.left), self.height(node.right))
 
     def size(self, node: Node) -> int:
-        """Get the number of nodes of a tree.
+        """Get the number of nodes of a (sub)tree.
 
         Args:
             node (Node): Root node
@@ -88,38 +100,49 @@ class BinaryTree:
 
     def level_order(self) -> None:
         """Level-oder traversal of a Binary Tree."""
-        q = deque()
-        q.append(self.root)
+        q = Queue()
+        q.enqueue(self.root)
 
-        while q:
-            current_node = q[0]
+        # Traverse
+        while not q.isempty():
+            current_node = q.get_at(0)
             print(current_node.data)
-            q.popleft()
+            q.dequeue()
             if current_node.left:
-                q.append(current_node.left)
+                q.enqueue(current_node.left)
             if current_node.right:
-                q.append(current_node.right)
+                q.enqueue(current_node.right)
 
-    def to_dot(self):
+    def visualize_tree(self) -> Digraph:
         """Graphical representation of a Binary Tree."""
         dot = Digraph()
-        q = deque()
-        q.append(self.root)
+        q = Queue()
+        q.enqueue(self.root)
 
         # Initiate level-order traversal
-        while q:
-            current_node = q[0]
-            q.popleft()
+        while not q.isempty():
+            current_node = q.get_at(0)
+            q.dequeue()
 
+            # Include current node
             dot.node(str(current_node.data), str(current_node.data))
 
+            # Add left node
             if current_node.left:
-                q.append(current_node.left)
+                q.enqueue(current_node.left)
                 dot.edge(str(current_node.data), str(current_node.left.data))
 
+            # Add right node
             if current_node.right:
-                q.append(current_node.right)
+                q.enqueue(current_node.right)
                 dot.edge(str(current_node.data), str(current_node.right.data))
 
+        # Display graphical representation
         dot.render('Binary Tree', view=True, format='png')
+
+        # Remove local files
+        sleep(5)
+        if os.path.isfile('Binary Tree.png'):
+            os.remove('Binary Tree.png')
+            os.remove('Binary Tree')
         return dot
