@@ -22,7 +22,7 @@ class Queue:
         return self.items[0]
 
     def enqueue(self, value: Union[int, str, Node]) -> List[Union[int, str, Node]]:
-        if not isinstance(value, (int, str)) and not (type(value).__name__ == 'Node'):
+        if not isinstance(value, (int, str)) and not type(value).__name__ == 'Node':
             raise TypeError(
                 f"Supported types are 'int', 'str', 'Node' but got '{type(value).__name__}'"
             )
