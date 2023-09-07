@@ -1,12 +1,13 @@
 import os
-from typing import Optional
-from collections import deque
 from time import sleep
+from typing import Optional, Union
 
 from graphviz import Digraph
 
 from node import Node
 from queue_dt.queue_dt import Queue
+from slist_dt.slist import SList
+from dlist_dt.dlist import DList
 
 
 class BinaryTree:
@@ -98,20 +99,62 @@ class BinaryTree:
             return 0
         return 1 + self.size(node.left) + self.size(node.right)
 
-    def level_order(self) -> None:
-        """Level-oder traversal of a Binary Tree."""
-        q = Queue()
-        q.enqueue(self.root)
+    def traverse(
+            self,
+            node: Node,
+            trav_method: str,
+            values: Union[SList, DList] = SList()
+    ) -> Optional[Union[SList, DList]]:
+        """Pre-order traversal of a Binary Tree.
 
-        # Traverse
-        while not q.isempty():
-            current_node = q.get_at(0)
-            print(current_node.data)
-            q.dequeue()
-            if current_node.left:
-                q.enqueue(current_node.left)
-            if current_node.right:
-                q.enqueue(current_node.right)
+        Args:
+            node (Node): Binary Tree Node
+            trav_method (str): `pre_order`, `in_order`, `post_order` or `level_order`
+            values (Union[SList, DList]): Emtpy Singly/Doubly Linked List to store values
+
+        Returns:
+            values (Optional[Union[SList, DList]]): Singly/Doubly Linked List with results
+        """
+        if node is None:
+            return None
+
+        # Check for non-recursive method
+        if trav_method != 'level_order':
+
+            # Pre-order traversal
+            if trav_method == 'pre_order':
+                values.add_last(node.data)
+            self.traverse(node.left, trav_method, values)
+
+            # In-order traversal
+            if trav_method == 'in_order':
+                values.add_last(node.data)
+            self.traverse(node.right, trav_method, values)
+
+            # Post-order traversal
+            if trav_method == 'post_order':
+                values.add_last(node.data)
+            return values
+
+        else:
+            # Auxiliary store data structure
+            q = Queue()
+            q.enqueue(self.root)
+
+            # Level-order traversal
+            while not q.isempty():
+                current_node = q.get_at(0)
+                values.add_last(current_node.data)
+                q.dequeue()
+
+                # Add left value
+                if current_node.left:
+                    q.enqueue(current_node.left)
+
+                # Add right value
+                if current_node.right:
+                    q.enqueue(current_node.right)
+            return values
 
     def visualize_tree(self) -> Digraph:
         """Graphical representation of a Binary Tree."""
@@ -141,7 +184,7 @@ class BinaryTree:
         dot.render('Binary Tree', view=True, format='png')
 
         # Remove local files
-        sleep(5)
+        sleep(10)
         if os.path.isfile('Binary Tree.png'):
             os.remove('Binary Tree.png')
             os.remove('Binary Tree')
