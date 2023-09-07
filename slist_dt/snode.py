@@ -1,11 +1,13 @@
 from typing import Union, Optional
 
+from tree_dt.node import Node
+
 
 class SNode:
-    """Implementation of Single List Node."""
+    """Implementation of Singly Linked List Node."""
     def __init__(
             self,
-            el: Union[int, str],
+            el: Union[int, str, Node],
             next_el: Optional['SNode'] = None
     ):
         self.element = el
@@ -17,9 +19,9 @@ class SNode:
 
     @element.setter
     def element(self, el: Union[int, str]):
-        if not isinstance(el, (int, str)):
+        if not isinstance(el, (int, str)) and not type(el).__name__ == 'Node':
             raise TypeError(
-                f"Supported data types are 'int' and 'str' but got '{type(el)}'"
+                f"Expected 'int', 'str' or 'Node' but got '{type(el).__name__}'"
             )
 
         self._element = el

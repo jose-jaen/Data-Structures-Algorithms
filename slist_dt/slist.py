@@ -1,10 +1,10 @@
 from typing import NoReturn
 
-from snode import *
+from slist_dt.snode import *
 
 
 class SList:
-    """Implementation of Single Linked List Data Structure."""
+    """Implementation of Singly Linked List Data Structure."""
     def __init__(self):
         self.size: int = 0
         self.head: Optional[SNode] = None
@@ -58,7 +58,7 @@ class SList:
             self.size += 1
 
     def remove_last(self) -> Optional[Union[int, str]]:
-        # Do not proceed if SList is empty
+        """Remove element at a specified position."""
         self._error(op='remove_last')
 
         # Iterate over the Single Linked List
@@ -78,7 +78,7 @@ class SList:
         self.size -= 1
         return result
 
-    def contains(self, element: Union[int, str]) -> int:
+    def contains(self, element: Union[int, str]) -> Optional[int]:
         """Retrieve the index of the first matching element."""
         self._error(op='contains')
 
