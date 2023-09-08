@@ -40,7 +40,7 @@ class SNode:
         self._next_node = next_el
 
     def __str__(self):
-        if isinstance(self._element, Node):
+        if isinstance(self._element, Node) or type(self._element).__name__ == 'Node':
             snode_element = self._element.data
         else:
             snode_element = self._element
