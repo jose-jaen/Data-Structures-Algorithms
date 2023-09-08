@@ -57,8 +57,4 @@ class DNode:
         right = self._next_node.element if self._next_node else None
         sign_left = '<-->' if self._previous else '<--'
         sign_right = '<-->' if self._next_node else '-->'
-        if isinstance(self._element, Node):
-            dnode_element = self._element.data
-        else:
-            dnode_element = self._element
-        return f'{left} {sign_left} {dnode_element} {sign_right} {right}'
+        return f'{left} {sign_left} {self._element} {sign_right} {right}'

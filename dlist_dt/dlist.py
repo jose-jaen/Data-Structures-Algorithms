@@ -208,18 +208,20 @@ class DList:
         """Graphical representation of DList."""
         res = 'None'
         node = self.head
+        cond = type(node.element).__name__ == 'Node'
 
         # Edge cases
         if not self.size:
             return res
         elif self.size == 1:
-            return f'{res} <-- {node.element} --> {res}'
+            return f'{res} <-- {node.element.data if cond else node.element} --> {res}'
 
         while node.next_node:
+            node_element = node.element.data if cond else node.element
             if node == self.head:
-                res += f' <-- {node.element}'
+                res += f' <-- {node_element}'
             else:
-                res += f' <--> {node.element}'
+                res += f' <--> {node_element}'
             node = node.next_node
-        res += f' <--> {self.tail.element} --> None'
+        res += f' <--> {self.tail} --> None'
         return res
