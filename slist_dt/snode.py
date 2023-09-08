@@ -40,4 +40,8 @@ class SNode:
         self._next_node = next_el
 
     def __str__(self):
-        return f'{self._element} --> {self._next_node}'
+        if isinstance(self._element, Node):
+            snode_element = self._element.data
+        else:
+            snode_element = self._element
+        return f'{snode_element} --> {self._next_node}'

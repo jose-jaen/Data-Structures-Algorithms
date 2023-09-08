@@ -31,13 +31,13 @@ class SList:
         elif index < 0 or index >= self.size:
             raise ValueError('Index out of range')
 
-    def add_first(self, element: Union[int, str]) -> NoReturn:
+    def add_first(self, element: Union[int, str, Node]) -> NoReturn:
         """Set a node as head at any moment."""
         node = SNode(el=element, next_el=self.head)
         self.head = node
         self.size += 1
 
-    def remove_first(self) -> Optional[Union[int, str]]:
+    def remove_first(self) -> Optional[Union[int, str, Node]]:
         # Do not proceed if SList is empty
         self._error(op='remove_first')
 
@@ -46,7 +46,7 @@ class SList:
         self.size -= 1
         return removed
 
-    def add_last(self, element: Union[int, str]) -> NoReturn:
+    def add_last(self, element: Union[int, str, Node]) -> NoReturn:
         if self.isempty():
             self.add_first(element)
         else:
@@ -57,7 +57,7 @@ class SList:
             node.next_node = new_node
             self.size += 1
 
-    def remove_last(self) -> Optional[Union[int, str]]:
+    def remove_last(self) -> Optional[Union[int, str, Node]]:
         """Remove element at a specified position."""
         self._error(op='remove_last')
 
@@ -78,7 +78,7 @@ class SList:
         self.size -= 1
         return result
 
-    def contains(self, element: Union[int, str]) -> Optional[int]:
+    def contains(self, element: Union[int, str, Node]) -> Optional[int]:
         """Retrieve the index of the first matching element."""
         self._error(op='contains')
 
@@ -93,7 +93,11 @@ class SList:
         # Not found
         return -1
 
-    def insert_at(self, index: int, element: Union[int, str]) -> Optional[SNode]:
+    def insert_at(
+            self,
+            index: int,
+            element: Union[int, str, Node]
+    ) -> Optional[SNode]:
         # Check index validity
         self._check_index(index)
 
@@ -116,7 +120,7 @@ class SList:
             self.size += 1
             return new_node
 
-    def remove_at(self, index: int) -> Optional[Union[int, str]]:
+    def remove_at(self, index: int) -> Optional[Union[int, str, Node]]:
         # Check index validity
         self._check_index(index)
 
@@ -139,7 +143,7 @@ class SList:
             self.size -= 1
             return removed
 
-    def get_at(self, index: int) -> Optional[Union[int, str]]:
+    def get_at(self, index: int) -> Optional[Union[int, str, Node]]:
         # Check index validity
         self._check_index(index)
 

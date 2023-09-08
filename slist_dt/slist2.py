@@ -1,6 +1,7 @@
 from typing import Union, NoReturn, Optional
 
 from slist import SList, SNode
+from tree_dt.node import Node
 
 
 class SList2(SList):
@@ -8,7 +9,7 @@ class SList2(SList):
     def __init__(self):
         super().__init__()
 
-    def remove(self, el: Union[int, str]) -> NoReturn:
+    def remove(self, el: Union[int, str, Node]) -> None:
         """Eliminate first occurrence of the specified element."""
         if self.contains(el) == -1:
             raise ValueError(f"Element '{el}' not found in SList")
@@ -26,7 +27,7 @@ class SList2(SList):
             self.head = node.next_node
         self.size -= 1
 
-    def remove_all(self, el: Union[int, str]) -> NoReturn:
+    def remove_all(self, el: Union[int, str, Node]) -> None:
         """Eliminate all occurrences of a given element."""
         if self.contains(el) == -1:
             raise ValueError(f"Element '{el}' not found in SList")
@@ -53,13 +54,13 @@ class SList2(SList):
             prev.next_node = None
             self.size -= 1
 
-    def get_at_rev(self, index: int) -> Optional[Union[int, str]]:
+    def get_at_rev(self, index: int) -> Optional[Union[int, str, Node]]:
         """Retrieve the specified element with reversed positioning."""
         self._error(op='get_at_rev')
         self._check_index(index)
         return self.get_at((self.size - 1) - index)
 
-    def get_middle(self) -> Optional[Union[int, str]]:
+    def get_middle(self) -> Optional[Union[int, str, Node]]:
         """Return the middle element."""
         self._error(op='get_middle')
 
@@ -76,7 +77,7 @@ class SList2(SList):
             count += 1
         return node.element
 
-    def count(self, el: Union[int, str]) -> Optional[int]:
+    def count(self, el: Union[int, str, Node]) -> Optional[int]:
         """Return total occurrences of an element."""
         if self.contains(el) == -1:
             return 0
