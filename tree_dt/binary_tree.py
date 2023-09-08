@@ -167,18 +167,21 @@ class BinaryTree:
             current_node = q.get_at(0)
             q.dequeue()
 
+            # Use memory address of current node as unique identifier
+            node_id = str(id(current_node))
+
             # Include current node
-            dot.node(str(current_node.data), str(current_node.data))
+            dot.node(node_id, str(current_node.data))
 
             # Add left node
             if current_node.left:
                 q.enqueue(current_node.left)
-                dot.edge(str(current_node.data), str(current_node.left.data))
+                dot.edge(node_id, str(id(current_node.left)))
 
             # Add right node
             if current_node.right:
                 q.enqueue(current_node.right)
-                dot.edge(str(current_node.data), str(current_node.right.data))
+                dot.edge(node_id, str(id(current_node.right)))
 
         # Display graphical representation
         dot.render('Binary Tree', view=True, format='png')
@@ -189,3 +192,59 @@ class BinaryTree:
             os.remove('Binary Tree.png')
             os.remove('Binary Tree')
         return dot
+
+    def insert(
+            self,
+            el: Union[int, str],
+            values: Union[SList, DList] = SList()
+    ) -> Union[SList, DList]:
+        """Insert an element at the first position available.
+
+        Args:
+            el: Element to be included in the binary tree
+            values: Linked List to store values
+
+        Returns:
+            values: New binary tree values
+        """
+        # Empty Binary Tree
+        if not self.root:
+            self.root = Node(data=el)
+            values.add_first(self.root)
+            print(f"Former tree: <Empty>\nNew tree: {values}")
+            return values
+
+        # Get former values
+        old_values = SList() if type(values).__name__ == 'SList' else DList()
+        former_values = self.traverse(
+            node=self.root,
+            trav_method='level_order',
+            values=old_values
+        )
+        print(f'Former tree: {former_values}')
+
+        # Traverse the tree and add new element
+        found = False
+        store_values = Queue()
+        store_values.enqueue(self.root)
+        while not store_values.isempty():
+            current_node = store_values.dequeue()
+            values.add_last(current_node.data)
+
+            # Add element to the left
+            if not current_node.left and not found:
+                found = True
+                current_node.left = Node(data=el, parent=current_node)
+
+            if current_node.left:
+                store_values.enqueue(current_node.left)
+
+            # Add element to the right
+            if not current_node.right and not found:
+                found = True
+                current_node.right = Node(data=el, parent=current_node)
+
+            if current_node.right:
+                store_values.enqueue(current_node.right)
+        print(f'New tree: {values}')
+        return values
