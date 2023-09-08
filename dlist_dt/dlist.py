@@ -217,11 +217,19 @@ class DList:
             return f'{res} <-- {node.element.data if cond else node.element} --> {res}'
 
         while node.next_node:
+            cond = type(node.element).__name__ == 'Node'
             node_element = node.element.data if cond else node.element
             if node == self.head:
                 res += f' <-- {node_element}'
             else:
                 res += f' <--> {node_element}'
             node = node.next_node
-        res += f' <--> {self.tail} --> None'
+
+        # Check last value
+        last_one = self.tail.element
+        if isinstance(last_one, Node) or type(last_one).__name__ == 'Node':
+            last_one = self.tail.element.data
+        else:
+            last_one = self.tail.element
+        res += f' <--> {last_one} --> None'
         return res
