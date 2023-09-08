@@ -32,7 +32,7 @@ class DList:
         elif index < 0 or index >= self.size:
             raise ValueError('Index out of range')
 
-    def add_first(self, el: Union[int, str]) -> NoReturn:
+    def add_first(self, el: Union[int, str, Node]) -> NoReturn:
         """Set a new head at any time."""
         if self.isempty():
             new_node = DNode(element=el)
@@ -44,7 +44,7 @@ class DList:
             self.head = new_node
         self.size += 1
 
-    def remove_first(self) -> Optional[Union[int, str]]:
+    def remove_first(self) -> Optional[Union[int, str, Node]]:
         # Do not proceed if DList is empty
         self._error(op='remove_first')
 
@@ -58,7 +58,7 @@ class DList:
         self.size -= 1
         return removed
 
-    def add_last(self, el: Union[int, str]) -> NoReturn:
+    def add_last(self, el: Union[int, str, Node]) -> NoReturn:
         """Set a new tail at any time."""
         if self.isempty():
             self.add_first(el)
@@ -68,7 +68,7 @@ class DList:
             self.tail = new_node
             self.size += 1
 
-    def remove_last(self) -> Optional[Union[int, str]]:
+    def remove_last(self) -> Optional[Union[int, str, Node]]:
         # Do not proceed if DList is empty
         self._error(op='remove_last')
 
@@ -106,7 +106,7 @@ class DList:
                 return False
         return True
 
-    def insert_at(self, index: int, el: Union[int, str]) -> NoReturn:
+    def insert_at(self, index: int, el: Union[int, str, Node]) -> NoReturn:
         # Check index validity
         self._check_index(index)
 
@@ -147,7 +147,7 @@ class DList:
             node.previous = new_node
             self.size += 1
 
-    def remove_at(self, index: int) -> Optional[Union[int, str]]:
+    def remove_at(self, index: int) -> Optional[Union[int, str, Node]]:
         """Remove an element from a certain position and return it."""
         self._error(op='remove_at')
         self._check_index(index)
@@ -186,7 +186,7 @@ class DList:
             self.size -= 1
             return removed
 
-    def get_at(self, index: int) -> Optional[Union[int, str]]:
+    def get_at(self, index: int) -> Optional[Union[int, str, Node]]:
         """Retrieve the element at the specified position."""
         self._check_index(index)
 

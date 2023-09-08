@@ -1,11 +1,13 @@
 from typing import Union, Optional
 
+from tree_dt.node import Node
+
 
 class DNode:
     """Implementation of Doubly Linked List Node."""
     def __init__(
             self,
-            element: Union[int, str],
+            element: Union[int, str, Node],
             previous: Optional['DNode'] = None,
             next_node: Optional['DNode'] = None
     ):
@@ -21,19 +23,19 @@ class DNode:
     def previous(self, previous: Optional['DNode']):
         if not isinstance(previous, DNode) and previous is not None:
             raise TypeError(
-                f"Supported data types are 'DNode' and 'None' but got '{type(previous)}'"
+                f"Expected 'DNode' or 'None' but got '{type(previous).__name__}'"
             )
         self._previous = previous
 
     @property
-    def element(self) -> Union[int, str]:
+    def element(self) -> Union[int, str, Node]:
         return self._element
 
     @element.setter
-    def element(self, element: Union[int, str]):
-        if not isinstance(element, (int, str)):
+    def element(self, element: Union[int, str, Node]):
+        if not isinstance(element, (int, str)) and type(element).__name__ != 'Node':
             raise TypeError(
-                f"Supported data types are 'int' and 'str' but got '{type(element)}'"
+                f"Expected 'int', 'str', 'Node' but got '{type(element).__name__}'"
             )
         self._element = element
 
@@ -45,7 +47,7 @@ class DNode:
     def next_node(self, next_node: Optional['DNode']):
         if not isinstance(next_node, DNode) and next_node is not None:
             raise TypeError(
-                f"Supported data types are 'DNode' and 'None' but got '{type(next_node)}'"
+                f"Expected 'DNode' or 'None' but got '{type(next_node).__name__}'"
             )
         self._next_node = next_node
 
@@ -55,4 +57,8 @@ class DNode:
         right = self._next_node.element if self._next_node else None
         sign_left = '<-->' if self._previous else '<--'
         sign_right = '<-->' if self._next_node else '-->'
-        return f'{left} {sign_left} {self._element} {sign_right} {right}'
+        if isinstance(self._element, Node):
+            dnode_element = self._element.data
+        else:
+            dnode_element = self._element
+        return f'{left} {sign_left} {dnode_element} {sign_right} {right}'

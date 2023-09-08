@@ -1,6 +1,7 @@
 from typing import Union, NoReturn, Optional
 
 from dlist import DList
+from tree_dt.node import Node
 
 
 class DList2(DList):
@@ -8,7 +9,7 @@ class DList2(DList):
     def __init__(self):
         super().__init__()
 
-    def remove(self, el: Union[int, str]) -> NoReturn:
+    def remove(self, el: Union[int, str, Node]) -> None:
         """Eliminate first occurrence of the specified element."""
         if not self.contains(el):
             raise ValueError(f"Element '{el}' not present in Doubly Linked List")
@@ -34,7 +35,7 @@ class DList2(DList):
             prev.next_node = node.next_node
         self.size -= 1
 
-    def remove_all(self, el: Union[int, str]) -> NoReturn:
+    def remove_all(self, el: Union[int, str, Node]) -> None:
         """Eliminate all occurrences of a given element."""
         self._error(op='remove_all')
 
@@ -69,12 +70,12 @@ class DList2(DList):
                     self.head = node.next_node
                     self.size -= 1
 
-    def get_at_rev(self, index: int) -> Optional[Union[int, str]]:
+    def get_at_rev(self, index: int) -> Optional[Union[int, str, Node]]:
         """Retrieve the specified element with reversed positioning."""
         self._error(op='get_at_rev')
         return self.get_at(self.size - 1 - index)
 
-    def get_middle(self) -> Optional[Union[int, str]]:
+    def get_middle(self) -> Optional[Union[int, str, Node]]:
         """Return the middle element."""
         self._error(op='get_middle')
 
@@ -84,7 +85,7 @@ class DList2(DList):
         else:
             return self.get_at((self.size - 1) // 2)
 
-    def count(self, el: Union[int, str]) -> Optional[int]:
+    def count(self, el: Union[int, str, Node]) -> Optional[int]:
         """Return total occurrences of an element."""
         self._error(op='count')
         counter = 0
@@ -126,8 +127,8 @@ class DList2(DList):
         self._error(op='issorted')
 
         # Check one element lists
-        if isinstance(self.head.element, str):
-            raise TypeError("Supported data type is 'int' but got 'str'")
+        if not isinstance(self.head.element, int):
+            raise TypeError(f"Expected 'int' but got {type(self.head.element).__name__}")
 
         if self.size > 1:
             # Iterate from the end
