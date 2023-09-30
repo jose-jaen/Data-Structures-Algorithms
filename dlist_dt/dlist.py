@@ -3,6 +3,14 @@ from typing import NoReturn
 from dlist_dt.dnode import *
 
 
+class EmptyListError(ValueError):
+    pass
+
+
+class InvalidIndex(ValueError):
+    pass
+
+
 class DList:
     """Implementation of Doubly Linked List Data Structure."""
     def __init__(self):
@@ -13,24 +21,24 @@ class DList:
     def isempty(self) -> bool:
         return self.size == 0
 
-    def _error(self, op: str) -> NoReturn:
+    def _error(self, op: str) -> Optional[EmptyListError]:
         """Throw an error if the Doubly Linked List is empty.
 
         Args:
-            - op (str): Operation to carry out on the Doubly Linked List
+            op: Operation to carry out on the Doubly Linked List
         """
         if self.isempty():
-            raise ValueError(f"The Doubly Linked List is empty, cannot apply '{op}'")
+            return EmptyListError(f"The Doubly Linked List is empty, cannot apply '{op}'")
 
-    def _check_index(self, index: int) -> NoReturn:
+    def _check_index(self, index: int) -> Optional[InvalidIndex]:
         """Throw an error if index is invalid."""
         if not isinstance(index, int):
-            raise TypeError(
+            return InvalidIndex(
                 f"Supported data type for 'index' is 'int' but got '{type(index)}'"
             )
 
         elif index < 0 or index >= self.size:
-            raise ValueError('Index out of range')
+            return InvalidIndex('Index out of range')
 
     def add_first(self, el: Union[int, str, Node]) -> NoReturn:
         """Set a new head at any time."""
@@ -46,7 +54,10 @@ class DList:
 
     def remove_first(self) -> Optional[Union[int, str, Node]]:
         # Do not proceed if DList is empty
-        self._error(op='remove_first')
+        try:
+            self._error(op='remove_first')
+        except EmptyListError as e:
+            raise e
 
         removed = self.head.element
         if self.size == 1:
@@ -70,7 +81,10 @@ class DList:
 
     def remove_last(self) -> Optional[Union[int, str, Node]]:
         # Do not proceed if DList is empty
-        self._error(op='remove_last')
+        try:
+            self._error(op='remove_last')
+        except EmptyListError as e:
+            raise e
 
         removed = self.tail.element
         if self.size == 1:
@@ -84,7 +98,10 @@ class DList:
 
     def contains(self, el: Union[int, str]) -> bool:
         # Do not proceed if DList is empty
-        self._error(op='contains')
+        try:
+            self._error(op='contains')
+        except EmptyListError as e:
+            raise e
 
         # Iterate over first half of DList
         count = 0
@@ -108,7 +125,10 @@ class DList:
 
     def insert_at(self, index: int, el: Union[int, str, Node]) -> NoReturn:
         # Check index validity
-        self._check_index(index)
+        try:
+            self._check_index(index)
+        except InvalidIndex as e:
+            raise e
 
         if index == 0:
             self.add_first(el)
@@ -149,8 +169,14 @@ class DList:
 
     def remove_at(self, index: int) -> Optional[Union[int, str, Node]]:
         """Remove an element from a certain position and return it."""
-        self._error(op='remove_at')
-        self._check_index(index)
+        try:
+            self._error(op='remove_at')
+        except EmptyListError as e:
+            raise e
+        try:
+            self._check_index(index)
+        except InvalidIndex as e:
+            raise e
 
         # Constant solutions
         if index == 0:
@@ -188,7 +214,10 @@ class DList:
 
     def get_at(self, index: int) -> Optional[Union[int, str, Node]]:
         """Retrieve the element at the specified position."""
-        self._check_index(index)
+        try:
+            self._check_index(index)
+        except InvalidIndex as e:
+            raise e
 
         if index <= (self.size - 1) // 2:
             count = 0
