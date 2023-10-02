@@ -1,6 +1,4 @@
-from math import sqrt
-from random import randint
-from typing import Any, NoReturn, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 
@@ -16,6 +14,7 @@ class KMeans:
         self.n_clusters = n_clusters
         self.max_iter = max_iter
         self.centroids: Optional[np.ndarray] = None
+        self.wcss: Union[int, float] = 0
 
     @staticmethod
     def _check_type(att_name: str, att_val: Any, att_exp: type) -> None:
@@ -61,7 +60,7 @@ class KMeans:
 
     def initialize_centroids(self) -> np.ndarray:
         """Implement k-means++ method."""
-        centroids = [randint(a=0, b=self._data.shape[0] - 1)]
+        centroids = [np.random.choice(self._data.shape[0])]
         while len(centroids) != self._n_clusters:
             mask = np.ones(self._data.shape[0], dtype=bool)
             mask[centroids] = False
@@ -73,7 +72,7 @@ class KMeans:
             )
 
             # Normalize distances to probabilities
-            probabilities = distances / np.sum(distances)
+            probabilities = distances / distances.sum(axis=0, keepdims=True)
 
             # Select next centroid
             next_centroid = np.random.choice(
@@ -81,30 +80,12 @@ class KMeans:
                 p=probabilities
             )
             centroids.append(next_centroid)
+
         self.centroids = self._data[centroids, :]
 
         # Add new column for centroids
         self._data = np.c_[self._data, [None] * len(self._data)]
         return self.centroids
-
-    def assign_centroids(self, obs: int) -> NoReturn:
-        """Retrieve the closest centroid to an observation.
-
-        Args:
-            obs: Index of an obversation
-
-        Returns:
-            Closes centroid to observation
-        """
-        dists = []
-
-        # Calculate L2 distance
-        for centroid in range(self._n_clusters):
-            data_points = self._data[obs, :-1]
-            data_centroids = self.centroids[centroid]
-            distance = sum((data_points - data_centroids)**2)
-            dists.append(sqrt(distance))
-        self._data[obs, -1] = str(dists.index(min(dists)))
 
     def get_clusters(self) -> np.ndarray:
         """Recalculate clusters until convergence."""
@@ -117,28 +98,43 @@ class KMeans:
         diff_clusters = True
         diff_centroids = True
         while n_iter < self._max_iter and diff_clusters and diff_centroids:
-            for row in range(len(self._data)):
-                self.assign_centroids(row)
-            past_clusters = self._data[: -1].copy()
+            # Calculate distances for all observations and centroids
+            distances = np.sqrt(
+                np.sum(
+                    (self._data[:, :-1, None] - self.centroids.T) ** 2,
+                    axis=1
+                ).astype(float)
+            )
+
+            # Assign each observation to the closest centroid
+            new_clusters = np.argmin(distances, axis=1)
+
+            # Update clusters
+            self._data[:, -1] = new_clusters
 
             # Update centroids
-            past_centroids = self.centroids.copy()
-            for centroid in range(self._n_clusters):
-                centroid_filter = self._data[:, -1] == str(centroid)
-                avg = np.mean(
-                    self._data[centroid_filter, :-1],
-                    axis=0
-                )
-                self.centroids[centroid] = avg
+            new_centroids = np.array(
+                [
+                    np.mean(self._data[self._data[:, -1] == k, :-1], axis=0)
+                    for k in range(self._n_clusters)
+                ]
+            )
+            diff_centroids = not np.array_equal(self.centroids, new_centroids)
+            self.centroids = new_centroids
 
             # Check if clusters didn't change
-            if np.array_equal(past_clusters, self._data[:, -1]):
-                diff_centroids = False
-
-            # Check if changes in new centroids
-            if np.array_equal(past_centroids, self.centroids):
-                diff_clusters = False
+            diff_clusters = not np.array_equal(self._data[:, -1], new_clusters)
 
             # Update number of iterations
             n_iter += 1
         return self._data[:, -1]
+
+    def get_wcss(self) -> Union[int, float]:
+        """Retrieve WCSS."""
+        self.wcss = 0
+        for centroid in range(self._n_clusters):
+            data_points = self._data[self._data[:, -1] == centroid, :-1]
+            centroid = self.centroids[centroid, :]
+            distance = np.sum(np.power(data_points - centroid, 2))
+            self.wcss += round(distance, 2)
+        return self.wcss
