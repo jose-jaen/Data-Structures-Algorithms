@@ -1,6 +1,7 @@
 from typing import Any, Optional, Union
 
 import numpy as np
+from scipy.spatial.distance import cdist
 
 
 class KMeans:
@@ -14,7 +15,7 @@ class KMeans:
         self.n_clusters = n_clusters
         self.max_iter = max_iter
         self.centroids: Optional[np.ndarray] = None
-        self.wcss: Union[int, float] = 0
+        self.wcss = Union[int, float]
 
     @staticmethod
     def _check_type(att_name: str, att_val: Any, att_exp: type) -> None:
@@ -81,30 +82,33 @@ class KMeans:
             )
             centroids.append(next_centroid)
 
-        self.centroids = self._data[centroids, :]
+        centroids = self._data[centroids, :]
+        self.centroids = centroids
+        return centroids
 
-        # Add new column for centroids
-        self._data = np.c_[self._data, [None] * len(self._data)]
-        return self.centroids
-
-    def get_clusters(self) -> np.ndarray:
+    def get_clusters(self) -> np.ndarray[int]:
         """Recalculate clusters until convergence."""
         n_iter = 0
 
         # Initialize centroids
-        self.initialize_centroids()
+        self.centroids = self.initialize_centroids().astype(float)
+
+        # Add new column for centroids
+        total = len(self._data)
+        max_limit = self._n_clusters - 1
+        rand_pts = [np.random.randint(low=0, high=max_limit) for _ in range(total)]
+        self._data = np.c_[self._data, rand_pts]
 
         # Compute new centroids until convergence
         diff_clusters = True
         diff_centroids = True
         while n_iter < self._max_iter and diff_clusters and diff_centroids:
+            # Store previous iterations
+            former_clusters = self._data[:, -1].copy()
+            former_centroids = self.centroids.copy()
+
             # Calculate distances for all observations and centroids
-            distances = np.sqrt(
-                np.sum(
-                    (self._data[:, :-1, None] - self.centroids.T) ** 2,
-                    axis=1
-                ).astype(float)
-            )
+            distances = cdist(self._data[:, :-1], self.centroids)
 
             # Assign each observation to the closest centroid
             new_clusters = np.argmin(distances, axis=1)
@@ -113,17 +117,23 @@ class KMeans:
             self._data[:, -1] = new_clusters
 
             # Update centroids
-            new_centroids = np.array(
+            self.centroids = np.array(
                 [
                     np.mean(self._data[self._data[:, -1] == k, :-1], axis=0)
                     for k in range(self._n_clusters)
                 ]
             )
-            diff_centroids = not np.array_equal(self.centroids, new_centroids)
-            self.centroids = new_centroids
 
-            # Check if clusters didn't change
-            diff_clusters = not np.array_equal(self._data[:, -1], new_clusters)
+            # Check if points remain in the same cluster
+            diff_clusters = not all(np.equal(former_clusters, self._data[:, -1]))
+
+            # Check if centroids didn't change significantly
+            tolerance = 1e-8
+            diff_centroids = not np.allclose(
+                self.centroids.astype(float),
+                former_centroids.astype(float),
+                atol=tolerance
+            )
 
             # Update number of iterations
             n_iter += 1
