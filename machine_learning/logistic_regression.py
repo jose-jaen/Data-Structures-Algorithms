@@ -27,6 +27,7 @@ class LogisticRegression:
         self.beta = beta
         self.batch_size = batch_size
         self.coef_: Optional[np.ndarray] = None
+        self.intercept_: Optional[Union[int, float]] = None
         self.grad_size: float = float('inf')
         self.has_intercept: bool = False
 
@@ -210,17 +211,26 @@ class LogisticRegression:
             target: np.ndarray
     ) -> np.ndarray:
         """Compute logistic regression gradient."""
-        inv_sample = 1 / len(target)
+        if not isinstance(target, (np.ndarray, list)):
+            inv_sample = 1
+        else:
+            inv_sample = 1 / len(target)
 
         # Compute gradient
         preds = self._sigmoid(regressors @ self.coef_)
+        # Accomodate Stochastic Gradient Ascent
+        if not isinstance(target, (np.ndarray, list)):
+            gradient = inv_sample * regressors * (target - preds)
+        else:
+            gradient = inv_sample * regressors.T @ (target - preds)
+
+        # Do not regularize intercept (if any)
         if self.has_intercept:
             penalty = - self._l2_penalty * self.coef_[1:]
-            gradient = inv_sample * regressors.T @ (target - preds)
             gradient[1:] += inv_sample * penalty
         else:
             penalty = - self._l2_penalty * self.coef_
-            gradient = inv_sample * (regressors.T @ (target - preds) + penalty)
+            gradient += penalty
         self.grad_size = np.linalg.norm(x=gradient)
         return gradient
 
@@ -337,24 +347,25 @@ class LogisticRegression:
             # Update coefficients
             gradient = self._get_gradient(regressors=x_batch, target=y_batch)
             momentum = self._beta * ma_gradient + (1 - self._beta) * gradient
-            self.coef_ += self._learning_rate * (1 - self._beta**n_iter) * momentum
+            self.coef_ += self._learning_rate * (1 - self._beta ** n_iter) * momentum
             k += self._batch_size
 
         # Iterate over the remaining observations
-        x_batch = regressors[k: len(target) - 1]
-        y_batch = target[k: len(target) - 1]
+        n = len(target) - 1
+        x_batch = regressors[k: n] if k < n else regressors[-1]
+        y_batch = target[k: n] if k < n else target[-1]
 
         # Final update of coefficients
         gradient = self._get_gradient(regressors=x_batch, target=y_batch)
         momentum = self._beta * ma_gradient + (1 - self._beta) * gradient
-        self.coef_ += self._learning_rate * (1 - self._beta**n_iter) * momentum
+        self.coef_ += self._learning_rate * (1 - self._beta ** n_iter) * momentum
         return self.coef_
 
     def fit(
             self,
             regressors: Union[np.ndarray, pd.DataFrame],
             target: Union[np.ndarray, pd.Series, List[int]]
-    ):
+    ) -> Tuple[np.ndarray, Optional[Union[int, float]]]:
         """Estimate logistic regression model with a specific solver.
 
         Args:
@@ -390,8 +401,10 @@ class LogisticRegression:
 
         # Fit algorithm to data
         n_iter = 0
-        while n_iter < self._max_iter and self.grad_size > self._tol:
+        diff_grad = float('inf')
+        while n_iter < self._max_iter and self.grad_size > self._tol < diff_grad:
             n_iter += 1
+            past_gradient = self._get_gradient(regressors=regressors, target=target)
 
             # Gradient Ascent
             if self._solver == 'gradient':
@@ -407,7 +420,6 @@ class LogisticRegression:
 
             # Mini Batch Gradient Ascent (with Momentum)
             elif self._solver == 'batch':
-                # Check batch size validity
                 if self._batch_size > len(target):
                     aux = f"Maximum: '{len(target)}', got '{self._batch_size}'"
                     raise ValueError(f"'batch_size' cannot exceed the training instances! " + aux)
@@ -421,4 +433,12 @@ class LogisticRegression:
                 )
                 gradient = self._get_gradient(regressors=regressors, target=target)
                 ma_gradient = self._beta * ma_gradient + (1 - self._beta) * gradient
-        return self.coef_
+
+            # Check changes in gradient
+            current_gradient = self._get_gradient(regressors=regressors, target=target)
+            diff_grad = np.linalg.norm(current_gradient - past_gradient)
+
+        # Restructure coefficients
+        self.coef_ = self.coef_[1:] if self.has_intercept else self.coef_
+        self.intercept_ = self.coef_[0] if self.has_intercept else None
+        return self.coef_, self.intercept_
