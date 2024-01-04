@@ -11,9 +11,9 @@ class LogisticRegression:
             l2_penalty: Union[int, float] = 0,
             fit_intercept: bool = True,
             random_state: Optional[int] = 42,
-            solver: str = 'newton',
+            solver: str = 'bfgs',
             max_iter: int = 100,
-            learning_rate: Union[int, float] = 0.01,
+            learning_rate: Union[int, float] = 0.5,
             beta: float = 0.9,
             batch_size: int = 128
     ):
@@ -30,6 +30,7 @@ class LogisticRegression:
         self.intercept_: Optional[Union[int, float]] = None
         self.grad_size: float = float('inf')
         self.has_intercept: bool = False
+        self.inv_hessian: Union[int, np.ndarray] = 0
 
     @staticmethod
     def _check_type(
@@ -216,8 +217,9 @@ class LogisticRegression:
         else:
             inv_sample = 1 / len(target)
 
-        # Compute gradient
+        # Get predictions
         preds = self._sigmoid(regressors @ self.coef_)
+
         # Accomodate Stochastic Gradient Ascent
         if not isinstance(target, (np.ndarray, list)):
             gradient = inv_sample * regressors * (target - preds)
@@ -294,6 +296,42 @@ class LogisticRegression:
         self.coef_ += np.linalg.inv(hessian) @ gradient
         return self.coef_
 
+    def bfgs(
+            self,
+            past_coefs: np.ndarray,
+            past_gradient: np.ndarray,
+            regressors: np.ndarray,
+            target: np.ndarray
+    ) -> np.ndarray:
+        """Update coefficients implementing BFGS algorithm.
+
+        Args:
+            past_coefs: Coefficient vector from the previous iteration
+            past_gradient: Gradient from the previous iteration
+            regressors: Regressors matrix
+            target: Vector with response variable
+
+        Returns:
+            Updated coeficients
+        """
+        p = len(self.coef_)
+
+        # Coefficient difference
+        diff_coef = self.coef_ - past_coefs
+
+        # Gradient difference
+        current_gradient = - self._get_gradient(regressors=regressors, target=target)
+        diff_grad = len(target) * current_gradient - past_gradient
+
+        # Update inverse hessian approximation
+        if np.dot(diff_grad, diff_coef) > 0:
+            rho = 1.0 / (diff_grad.T @ diff_coef)
+            lhs = np.eye(N=p) - rho * np.outer(diff_coef, diff_grad)
+            rhs = np.eye(N=p) - rho * np.outer(diff_grad, diff_coef)
+            addition = rho * np.outer(diff_coef, diff_coef)
+            self.inv_hessian = lhs @ self.inv_hessian @ rhs + addition
+        return self.coef_
+
     def coordinate(self, regressors: np.ndarray, target: np.ndarray) -> np.ndarray:
         """Update coefficients implementing Coordinate Gradient method.
         Update either a random coefficient per iteration or the coefficient
@@ -347,7 +385,7 @@ class LogisticRegression:
             # Update coefficients
             gradient = self._get_gradient(regressors=x_batch, target=y_batch)
             momentum = self._beta * ma_gradient + (1 - self._beta) * gradient
-            self.coef_ += self._learning_rate * (1 - self._beta ** n_iter) * momentum
+            self.coef_ += self._learning_rate * (1 - self._beta**n_iter) * momentum
             k += self._batch_size
 
         # Iterate over the remaining observations
@@ -358,14 +396,14 @@ class LogisticRegression:
         # Final update of coefficients
         gradient = self._get_gradient(regressors=x_batch, target=y_batch)
         momentum = self._beta * ma_gradient + (1 - self._beta) * gradient
-        self.coef_ += self._learning_rate * (1 - self._beta ** n_iter) * momentum
+        self.coef_ += self._learning_rate * (1 - self._beta**n_iter) * momentum
         return self.coef_
 
     def fit(
             self,
             regressors: Union[np.ndarray, pd.DataFrame],
             target: Union[np.ndarray, pd.Series, List[int]]
-    ) -> Tuple[np.ndarray, Optional[Union[int, float]]]:
+    ):
         """Estimate logistic regression model with a specific solver.
 
         Args:
@@ -398,6 +436,8 @@ class LogisticRegression:
 
         # Initialize momentum
         ma_gradient = 0
+        if self._solver == 'bfgs':
+            self.inv_hessian = np.eye(N=regressors.shape[1])
 
         # Fit algorithm to data
         n_iter = 0
@@ -413,6 +453,18 @@ class LogisticRegression:
             # Newton-Raphson
             elif self._solver == 'newton':
                 self.newton_rapshon(regressors=regressors, target=target)
+
+            # BFGS (Quasi-Newton)
+            elif self._solver == 'bfgs':
+                past_coef = self.coef_.copy()
+                past_grad = - len(target) * past_gradient
+                self.coef_ -= self._learning_rate * self.inv_hessian @ past_grad
+                self.bfgs(
+                    past_coefs=past_coef,
+                    past_gradient=past_grad,
+                    regressors=regressors,
+                    target=target
+                )
 
             # Coordinate Ascent
             elif self._solver == 'coordinate':
@@ -437,8 +489,4 @@ class LogisticRegression:
             # Check changes in gradient
             current_gradient = self._get_gradient(regressors=regressors, target=target)
             diff_grad = np.linalg.norm(current_gradient - past_gradient)
-
-        # Restructure coefficients
-        self.coef_ = self.coef_[1:] if self.has_intercept else self.coef_
-        self.intercept_ = self.coef_[0] if self.has_intercept else None
-        return self.coef_, self.intercept_
+        return self.coef_
