@@ -12,10 +12,11 @@ class LogisticRegression:
             fit_intercept: bool = True,
             random_state: Optional[int] = 42,
             solver: str = 'bfgs',
-            max_iter: int = 100,
+            max_iter: int = 150,
             learning_rate: Union[int, float] = 0.1,
             beta: float = 0.9,
-            batch_size: int = 256
+            batch_size: int = 256,
+            verbose: bool = False
     ):
         self.tol = tol
         self.l2_penalty = l2_penalty
@@ -26,10 +27,13 @@ class LogisticRegression:
         self.learning_rate = learning_rate
         self.beta = beta
         self.batch_size = batch_size
+        self.verbose = verbose
         self.coef_: Optional[np.ndarray] = None
+        self.intercept_: Optional[Union[int, float]] = None
         self.grad_size: float = float('inf')
         self.has_intercept: bool = False
         self.inv_hessian: Union[int, np.ndarray] = 0
+        self.n_iter: int = 0
 
     @staticmethod
     def _check_type(
@@ -170,6 +174,20 @@ class LogisticRegression:
             raise ValueError(f"'batch_zie' must be strictly positive!")
         self._batch_size = batch_size
 
+    @property
+    def verbose(self) -> bool:
+        return self._verbose
+
+    @verbose.setter
+    def verbose(self, verbose: bool) -> None:
+        self._check_type(att_name='verbose', att=verbose, right_type=bool)
+        self._verbose = verbose
+
+    def _set_random_seed(self) -> None:
+        """Set random seed for reproducibility."""
+        if self.random_state:
+            np.random.seed(self.random_state)
+
     @staticmethod
     def _positive_sigmoid(x: np.ndarray) -> np.ndarray:
         """Aliviate overflow for positive values"""
@@ -190,13 +208,39 @@ class LogisticRegression:
         result[negative] = self._negative_sigmoid(x[negative])
         return result
 
-    def _set_random_seed(self) -> None:
-        """Set random seed for reproducibility."""
-        if self.random_state:
-            np.random.seed(self.random_state)
+    def _neg_log_likelihood(
+            self,
+            regressors: np.ndarray,
+            target: np.ndarray,
+            coefs: np.ndarray
+    ) -> Union[int, float]:
+        """Compute (stable) negative log-likelihood at current iteration.
+
+        Args:
+            regressors: Feature matrix
+            target: Response variable vector
+            coefs: Vector of weights
+        """
+        epsilon = 1.e-15
+        n = len(target)
+
+        # Get components of the objective function
+        preds = self._sigmoid(x=regressors @ coefs)
+        complement = 1 - preds
+        preds[preds == 0] = epsilon
+        complement[complement == 0] = epsilon
+        reg = (1 / (2*n)) * self._l2_penalty * np.linalg.norm(x=coefs, ord=2)
+        positive_class = np.dot(a=target, b=np.log(preds))
+        negative_class = np.dot(a=(1 - target), b=np.log(complement))
+        neg_log_likelihood = - (1 / n) * np.sum(positive_class + negative_class) + reg
+        return neg_log_likelihood
 
     def _get_intercept(self, regressors: np.ndarray) -> Optional[int]:
-        """Identify if there is a constant in the features and change its position."""
+        """Identify if there is a constant in the features and change its position.
+
+        Args:
+            regressors: Feature matrix
+        """
         p = regressors.shape[1]
         for covariate in range(p):
             unique_vals = set(regressors[:, covariate])
@@ -210,10 +254,16 @@ class LogisticRegression:
             regressors: np.ndarray,
             target: np.ndarray
     ) -> np.ndarray:
-        """Compute logistic regression gradient."""
+        """Compute logistic regression gradient.
+
+        Args:
+            regressors: Feature matrix
+            target: Response variable vector
+        """
+        # Get predictions
         preds = self._sigmoid(regressors @ self.coef_)
 
-        # Accomodate Stochastic Gradient Ascent
+        # Accomodate Stochastic Gradient Descent
         if not isinstance(target, (np.ndarray, list)):
             gradient = regressors * (preds - target)
         else:
@@ -233,7 +283,11 @@ class LogisticRegression:
             self,
             regressors: np.ndarray
     ) -> np.ndarray:
-        """Compute logistic regression Hessian matrix."""
+        """Compute logistic regression Hessian matrix.
+
+        Args:
+            regressors: Feature matrix
+        """
         preds = self._sigmoid(x=regressors @ self.coef_)
         variance = np.diag(preds * (1 - preds))
         fisher_matrix = regressors.T @ variance @ regressors
@@ -243,48 +297,32 @@ class LogisticRegression:
             fisher_matrix += self._l2_penalty * identity
         return fisher_matrix
 
-    def gradient_ascent(
-            self,
-            regressors: np.ndarray,
-            target: np.ndarray
-    ) -> np.ndarray:
-        """Update coefficients implementing Gradient Ascent algorithm.
+    def gradient_descent(self, regressors: np.ndarray, target: np.ndarray) -> None:
+        """Update coefficients implementing Gradient Descent algorithm.
 
         Args:
             regressors: Feature matrix
             target: Response variable vector
-
-        Returns:
-            Updated coefficients
         """
         # Update coefficients
         gradient = self._get_gradient(regressors=regressors, target=target)
         self.coef_ -= self._learning_rate * gradient
-        return self.coef_
 
-    def newton_rapshon(
-            self,
-            regressors: np.ndarray,
-            target: np.ndarray
-    ) -> np.ndarray:
+    def newton_rapshon(self, regressors: np.ndarray, target: np.ndarray) -> None:
         """Update coefficients implementing Newton-Raphson algorithm.
 
         Args:
             regressors: Feature matrix
             target: Response variable vector
-
-        Returns:
-            Updated coefficients
         """
         # Compute gradient
         gradient = self._get_gradient(regressors=regressors, target=target)
 
         # Get Hessian
-        hessian = self._get_hessian(regressors=regressors, target=target)
+        hessian = self._get_hessian(regressors=regressors)
 
         # Update coefficients
         self.coef_ -= np.linalg.inv(hessian) @ gradient
-        return self.coef_
 
     def bfgs(
             self,
@@ -292,7 +330,7 @@ class LogisticRegression:
             past_gradient: np.ndarray,
             regressors: np.ndarray,
             target: np.ndarray
-    ) -> np.ndarray:
+    ) -> None:
         """Update coefficients implementing BFGS algorithm.
 
         Args:
@@ -300,9 +338,6 @@ class LogisticRegression:
             past_gradient: Gradient from the previous iteration
             regressors: Regressors matrix
             target: Vector with response variable
-
-        Returns:
-            Updated coeficients
         """
         p = len(self.coef_)
 
@@ -320,9 +355,8 @@ class LogisticRegression:
             rhs = np.eye(N=p) - rho * np.outer(diff_grad, diff_coef)
             addition = rho * np.outer(diff_coef, diff_coef)
             self.inv_hessian = lhs @ self.inv_hessian @ rhs + addition
-        return self.coef_
 
-    def coordinate(self, regressors: np.ndarray, target: np.ndarray) -> np.ndarray:
+    def coordinate(self, regressors: np.ndarray, target: np.ndarray) -> None:
         """Update coefficients implementing Coordinate Gradient method.
         Update either a random coefficient per iteration or the coefficient
         associated with the variable with highest absolute value in the gradient.
@@ -330,9 +364,6 @@ class LogisticRegression:
         Args:
             regressors: Feature matrix
             target: Response variable vector
-
-        Returns:
-            Updated coefficients
         """
         # Get the gradient
         gradient = self._get_gradient(regressors=regressors, target=target)
@@ -345,22 +376,19 @@ class LogisticRegression:
         else:
             index = np.random.randint(low=0, high=len(gradient) - 1, size=1)[0]
             self.coef_[index] -= self._learning_rate * gradient[index]
-        return self.coef_
 
     def batch_gradient(
             self,
             regressors: np.ndarray,
             target: np.ndarray,
-            ma_gradient: Union[int, float],
-            n_iter: int
+            ma_gradient: Union[int, float]
     ) -> np.ndarray:
-        """Update coefficients implementing Mini-Batch Gradient Ascent.
+        """Update coefficients implementing Mini-Batch Gradient Descent.
 
         Args:
             regressors: Feature matrix
             target: Response variable vector
             ma_gradient: Moving Average of the gradient
-            n_iter: Number of current iteration for bias correction
 
         Returns:
             Updated coefficients
@@ -375,7 +403,7 @@ class LogisticRegression:
             # Update coefficients
             gradient = self._get_gradient(regressors=x_batch, target=y_batch)
             momentum = self._beta * ma_gradient + (1 - self._beta) * gradient
-            self.coef_ -= self._learning_rate * (1 - self._beta**n_iter) * momentum
+            self.coef_ -= self._learning_rate * (1 - self._beta**self.n_iter) * momentum
             k += self._batch_size
 
         # Iterate over the remaining observations
@@ -386,14 +414,14 @@ class LogisticRegression:
         # Final update of coefficients
         gradient = self._get_gradient(regressors=x_batch, target=y_batch)
         momentum = self._beta * ma_gradient + (1 - self._beta) * gradient
-        self.coef_ -= self._learning_rate * (1 - self._beta**n_iter) * momentum
+        self.coef_ -= self._learning_rate * (1 - self._beta**self.n_iter) * momentum
         return self.coef_
 
     def fit(
             self,
             regressors: Union[np.ndarray, pd.DataFrame],
             target: Union[np.ndarray, pd.Series, List[int]]
-    ):
+    ) -> None:
         """Estimate logistic regression model with a specific solver.
 
         Args:
@@ -422,7 +450,8 @@ class LogisticRegression:
 
         # Initialize coefficients
         p = regressors.shape[1]
-        self.coef_ = np.zeros(shape=(p,))
+        log_likelihood = 0
+        self.coef_ = np.random.normal(size=p, scale=0.001)
 
         # Initialize momentum
         ma_gradient = 0
@@ -436,15 +465,16 @@ class LogisticRegression:
             self.inv_hessian = np.eye(N=regressors.shape[1])
 
         # Fit algorithm to data
-        n_iter = 0
         diff_grad = float('inf')
-        while n_iter < self._max_iter and self.grad_size > self._tol < diff_grad:
-            n_iter += 1
+        while self.n_iter < self._max_iter and self.grad_size > self._tol < diff_grad:
+            self.n_iter += 1
+
+            # Get gradient
             past_gradient = self._get_gradient(regressors=regressors, target=target)
 
-            # Gradient Ascent
+            # Gradient Descent
             if self._solver == 'gradient':
-                self.gradient_ascent(regressors=regressors, target=target)
+                self.gradient_descent(regressors=regressors, target=target)
 
             # Newton-Raphson
             elif self._solver == 'newton':
@@ -461,11 +491,11 @@ class LogisticRegression:
                     target=target
                 )
 
-            # Coordinate Ascent
+            # Coordinate Descent
             elif self._solver == 'coordinate':
                 self.coordinate(regressors=regressors, target=target)
 
-            # Mini Batch Gradient Ascent (with Momentum)
+            # Mini Batch Gradient Descent (with Momentum)
             elif self._solver == 'batch':
                 if self._batch_size > len(target):
                     aux = f"Maximum: '{len(target)}', got '{self._batch_size}'"
@@ -475,13 +505,11 @@ class LogisticRegression:
                 self.batch_gradient(
                     regressors=regressors,
                     target=target,
-                    ma_gradient=ma_gradient,
-                    n_iter=n_iter
+                    ma_gradient=ma_gradient
                 )
                 gradient = self._get_gradient(regressors=regressors, target=target)
                 ma_gradient = self._beta * ma_gradient + (1 - self._beta) * gradient
 
-            # Conjugate Gradient (Hessian-free inexact method)
             elif self._solver == 'conjugate':
                 step = - past_gradient + beta * step
                 self.coef_ += self._learning_rate * step
@@ -491,4 +519,28 @@ class LogisticRegression:
             # Check changes in gradient
             current_gradient = self._get_gradient(regressors=regressors, target=target)
             diff_grad = np.linalg.norm(current_gradient - past_gradient)
-        return self.coef_
+            log_likelihood = self._neg_log_likelihood(
+                regressors=regressors,
+                target=target,
+                coefs=self.coef_
+            )
+
+            # Convergence information
+            if self._verbose and not self.n_iter % 10:
+                print(f'Iteration {self.n_iter}')
+                print(f'Negative log-likelihood: {round(log_likelihood, 4)}')
+                print(f'Gradient size: {round(self.grad_size, 4)}')
+                print(f'Gradient difference: {round(diff_grad, 4)}')
+                print('\n')
+
+        # Set up coefficient attributes
+        if self.has_intercept:
+            self.intercept_ = self.coef_[0]
+            self.coef_ = self.coef_[1:]
+
+        if self._verbose and self.n_iter == self._max_iter:
+            print('Convergence not attained, consider increasing the number of iterations')
+            print(f'Negative log-likelihood: {round(log_likelihood, 4)}')
+            print(f'Gradient size: {round(self.grad_size, 4)}')
+            print(f'Gradient difference: {round(diff_grad, 4)}')
+            print('\n')
