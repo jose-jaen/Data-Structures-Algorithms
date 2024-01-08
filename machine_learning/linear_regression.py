@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Any, Type, Union, Tuple, List
+from typing import Optional, Any, Union, Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -24,20 +24,25 @@ class LinearRegression:
         self.tol = tol
         self.l2_penalty = l2_penalty
         self.coef_: Optional[np.ndarray] = None
-        self.intercept_: Optional[float] = None
+        self.intercept_: Optional[Union[int, float]] = None
 
     @staticmethod
-    def _type_error(
+    def _check_type(
             att_name: str,
-            att_value: Any,
-            att_type: Union[Tuple[Type[Any], Type[Any]], Type[Any]]
+            att: Any,
+            right_type: Union[type, Tuple[type, type]]
     ) -> None:
-        """Raise TypeError if attribute has unexpected type."""
-        expected = att_type.__name__
-        mistyped = type(att_value).__name__
-        if not isinstance(att_value, att_type):
+        """Check if attributes have the correct type.
+
+        Args:
+            att_name: Attribute name
+            att: Attribute to be checked
+            right_type: Expected datatype
+        """
+        att_type = type(att).__name__
+        if not isinstance(att, right_type):
             raise TypeError(
-                f"'{att_name}' must be '{expected}' but got '{mistyped}'"
+                f"'{att_name}' must be '{right_type.__name__}' but got '{att_type}'"
             )
 
     @property
@@ -46,10 +51,10 @@ class LinearRegression:
 
     @intercept.setter
     def intercept(self, intercept: bool) -> None:
-        self._type_error(
+        self._check_type(
             att_name='intercept',
-            att_value=intercept,
-            att_type=bool
+            att=intercept,
+            right_type=bool
         )
         self._intercept = intercept
 
@@ -59,10 +64,10 @@ class LinearRegression:
 
     @solver.setter
     def solver(self, solver: str) -> None:
-        self._type_error(
+        self._check_type(
             att_name='solver',
-            att_value=solver,
-            att_type=str
+            att=solver,
+            right_type=str
         )
 
         # Only OLS and Gradient Descent implementations
@@ -78,10 +83,10 @@ class LinearRegression:
 
     @learning_rate.setter
     def learning_rate(self, learning_rate: float) -> None:
-        self._type_error(
+        self._check_type(
             att_name='learning_rate',
-            att_value=learning_rate,
-            att_type=float
+            att=learning_rate,
+            right_type=float
         )
 
         # Warn user and check for incorrect values
@@ -100,10 +105,10 @@ class LinearRegression:
 
     @max_iter.setter
     def max_iter(self, max_iter: int) -> None:
-        self._type_error(
+        self._check_type(
             att_name='max_iter',
-            att_value=max_iter,
-            att_type=int
+            att=max_iter,
+            right_type=int
         )
 
         # Warn user and check for incorrect values
@@ -122,10 +127,10 @@ class LinearRegression:
 
     @tol.setter
     def tol(self, tol: float) -> None:
-        self._type_error(
+        self._check_type(
             att_name='tol',
-            att_value=tol,
-            att_type=float
+            att=tol,
+            right_type=float
         )
 
         # Warn user and check for incorrect values
@@ -144,29 +149,29 @@ class LinearRegression:
 
     @l2_penalty.setter
     def l2_penalty(self, l2_penalty: float) -> None:
-        self._type_error(
+        self._check_type(
             att_name='l2_penalty',
-            att_value=l2_penalty,
-            att_type=float
+            att=l2_penalty,
+            right_type=float
         )
 
-        if l2_penalty < 0:
-            raise ValueError("'l2_penalty' must be strictly positive")
+        if l2_penalty < 0.0:
+            raise ValueError("'l2_penalty' must be greater than or equal to zero")
         self._l2_penalty = l2_penalty
 
     def ols(
             self,
             regressors: Union[np.ndarray, pd.DataFrame],
             target: Union[np.ndarray, pd.Series]
-    ) -> np.ndarray:
+    ) -> None:
         """Estimate a Linear Regression model with OLS.
 
         Args:
-            - regressors (Union[np.ndarray, pd.DataFrame]): Feature matrix
-            - target (Union[np.ndarray, pd.DataFrame]): Target vector
+            regressors: Feature matrix
+            target: Target vector
 
         Returns:
-            - np.ndarray: Coefficients
+            Vector of coefficients
         """
         if self._l2_penalty:
             penalty = np.zeros(shape=(regressors.shape[1], regressors.shape[1]))
@@ -183,7 +188,6 @@ class LinearRegression:
 
         # Get closed-form solution
         self.coef_ = cross_product_inv @ regressors.T @ target
-        return np.array(self.coef_)
 
     def fit(
             self,
@@ -193,11 +197,11 @@ class LinearRegression:
         """Train a Linear Regression model.
 
         Args:
-            - regressors (Union[np.ndarray, pd.DataFrame]): Feature matrix
-            - target (Union[np.ndarray, pd.DataFrame]): Target vector
+            regressors: Feature matrix
+            target: Target vector
 
         Returns:
-            - Tuple(Optional[float], List[float]): Coefficients
+            Coefficients and intercept (if any)
         """
         # Convert to numpy arrays
         if isinstance(regressors, pd.DataFrame):
@@ -210,8 +214,9 @@ class LinearRegression:
         if self._intercept:
             regressors = np.c_[np.ones((regressors.shape[0],)), regressors]
 
-        # Get coefficients
-        self.coef_ = self.ols(regressors, target)
+        # Estimate with OLS
+        if self._solver == 'ols':
+            self.ols(regressors=regressors, target=target)
 
         # Separate intercept and coefficients
         self.intercept_ = self.coef_[0] if self._intercept else None
