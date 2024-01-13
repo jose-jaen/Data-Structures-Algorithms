@@ -297,6 +297,49 @@ class LogisticRegression:
             fisher_matrix += self._l2_penalty * identity
         return fisher_matrix
 
+    def _bls(
+            self,
+            step: np.ndarray,
+            regressors: np.ndarray,
+            target: np.ndarray
+    ) -> float:
+        """Update learning rate with Bactracking Line Search algorithm.
+
+        Args:
+            step: Gradient Descent step vector
+            regressors: Design matrix
+            target: Response variable vector
+
+        Returns:
+            rate: Update learning rate through BLS
+        """
+        candidate = self.coef_ - self._learning_rate * step
+        obj_candidate = self._neg_log_likelihood(
+            regressors=regressors,
+            target=target,
+            coefs=candidate
+        )
+        obj_current = self._neg_log_likelihood(
+            regressors=regressors,
+            target=target,
+            coefs=self.coef_
+        )
+        sigma = 1 / (10**4)
+        rate = self._learning_rate
+        gradient = self._get_gradient(regressors=regressors, target=target)
+        armijo = - sigma * rate * step.T @ gradient
+        while obj_candidate - obj_current > armijo:
+            rate *= 0.5
+            gradient = self._get_gradient(regressors=regressors, target=target)
+            armijo = - sigma * rate * step.T @ gradient
+            candidate = self.coef_ - rate * step
+            obj_candidate = self._neg_log_likelihood(
+                regressors=regressors,
+                target=target,
+                coefs=candidate
+            )
+        return rate
+
     def gradient_descent(self, regressors: np.ndarray, target: np.ndarray) -> None:
         """Update coefficients implementing Gradient Descent algorithm.
 
@@ -483,7 +526,13 @@ class LogisticRegression:
             # BFGS (Quasi-Newton)
             elif self._solver == 'bfgs':
                 past_coef = self.coef_.copy()
-                self.coef_ -= self._learning_rate * self.inv_hessian @ past_gradient
+
+                # Apply BLS to get optimum learning rate
+                step = self.inv_hessian @ past_gradient
+                rate = self._bls(step=step, regressors=regressors, target=target)
+
+                # Update coefficients
+                self.coef_ -= rate * step
                 self.bfgs(
                     past_coefs=past_coef,
                     past_gradient=past_gradient,
